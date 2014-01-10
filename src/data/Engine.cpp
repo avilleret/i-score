@@ -1714,7 +1714,7 @@ void Engine::setTriggerPointMessage(ConditionedProcessId triggerId, std::string 
     // edit the expression associated to this event
     v = TTObjectBasePtr(timeEvent);
     v.append(TTSymbol(triggerMessage));
-    getTimeCondition(triggerId)->sendMessage(TTSymbol("EventExpression"), v, out);
+    getTimeCondition(triggerId)->sendMessage(TTSymbol("EventTriggerExpression"), v, out);
 }
 
 std::string Engine::getTriggerPointMessage(ConditionedProcessId triggerId)
@@ -1732,7 +1732,7 @@ std::string Engine::getTriggerPointMessage(ConditionedProcessId triggerId)
         TTScoreTimeProcessGetEndEvent(timeProcess, &timeEvent);
     
     // Get the expression associated to this event
-    if (!getTimeCondition(triggerId)->sendMessage(TTSymbol("ExpressionFind"), v, out)) {
+    if (!getTimeCondition(triggerId)->sendMessage(TTSymbol("TriggerExpressionFind"), v, out)) {
         
         expression = out[0];
         return expression.c_str();
