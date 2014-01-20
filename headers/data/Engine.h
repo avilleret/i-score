@@ -703,6 +703,16 @@ public:
 	 * \param triggerMessage : the trigger message
 	 */
 	void setTriggerPointMessage(ConditionedProcessId triggerId, std::string triggerMessage);
+
+	/*!
+	 * Sets the triggerPoint (given by ID) dispose message.
+	 *
+	 * Throws OutOfBoundException if the ID is not matching any triggerPoint.
+	 *
+	 * \param triggerId : the ID of the trigger.
+	 * \param disposeMessage : the dispose message
+	 */
+	void setDisposePointMessage(ConditionedProcessId triggerId, std::string disposeMessage);
     
 	/*!
 	 * Gets the triggerPoint (given by ID) message.
@@ -714,6 +724,17 @@ public:
 	 * \return the trigger message
 	 */
 	std::string getTriggerPointMessage(ConditionedProcessId triggerId);
+
+	/*!
+	 * Gets the triggerPoint (given by ID) dispose message.
+	 *
+	 * Throws OutOfBoundException if the ID is not matching any triggerPoint.
+	 *
+	 * \param triggerId : the ID of the trigger.
+	 *
+	 * \return the dispose message
+	 */
+	std::string getDisposePointMessage(ConditionedProcessId triggerId);
     
 	/*!
 	 * Gets the id of the box linked to the given trigger point.

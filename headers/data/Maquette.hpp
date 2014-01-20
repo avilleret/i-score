@@ -576,6 +576,14 @@ class Maquette : public QObject
     bool setTriggerPointMessage(unsigned int trgID, const std::string &message);
 
     /*!
+     * \brief Set trigger point 's dispose message.
+     *
+     * \param trgID : the trigger point to be modified
+     * \param message : the new message
+     */
+    bool setDisposePointMessage(unsigned int trgID, const std::string &message);
+
+    /*!
      * \brief Perform moving or resizing for a set of boxes.
      *
      * \param boxes : the boxes that have to be transformed with their new coordinates

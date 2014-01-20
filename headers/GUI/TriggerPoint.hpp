@@ -69,7 +69,7 @@ class TriggerPoint : public QGraphicsItem
 {
   public:
     TriggerPoint(unsigned int boxID, BoxExtremity extremity,
-                 const std::string &message, unsigned int ID, MaquetteScene *parent);
+                 const std::string &message, const std::string &disposeMessage, unsigned int ID, MaquetteScene *parent);
 
     TriggerPoint(const AbstractTriggerPoint &abstract, MaquetteScene *parent);
 
@@ -254,6 +254,7 @@ class TriggerPoint : public QGraphicsItem
      * \brief Create the QInputDialog, for asking new name.
      */
     QInputDialog *nameInputDialog();
+    QInputDialog *disposeMessageDialog();
     virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
     virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *event);
     virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);

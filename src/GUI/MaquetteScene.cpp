@@ -1091,6 +1091,12 @@ MaquetteScene::setTriggerPointMessage(unsigned int trgID, const string &message)
   return _maquette->setTriggerPointMessage(trgID, message);
 }
 
+bool
+MaquetteScene::setDisposePointMessage(unsigned int trgID, const string &message)
+{
+  return _maquette->setDisposePointMessage(trgID, message);
+}
+
 unsigned int
 MaquetteScene::findMother(const QPointF &topLeft, const QPointF &size)
 {

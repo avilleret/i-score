@@ -403,6 +403,14 @@ class MaquetteScene : public QGraphicsScene
     bool setTriggerPointMessage(unsigned int trgID, const std::string &message);
 
     /*!
+     * \brief Set trigger point 's dispose message.
+     *
+     * \param trgID : the trigger point to be modified
+     * \param message : the new message
+     */
+    bool setDisposePointMessage(unsigned int trgID, const std::string &message);
+
+    /*!
      * \brief Selects the whole set of selectable items.
      */
     void selectAll();

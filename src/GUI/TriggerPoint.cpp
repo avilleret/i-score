@@ -62,12 +62,12 @@ const float TriggerPoint::WIDTH = BasicBox::TRIGGER_ZONE_WIDTH;
 const float TriggerPoint::HEIGHT = BasicBox::TRIGGER_ZONE_HEIGHT + BasicBox::TRIGGER_ZONE_HEIGHT / 4;
 
 TriggerPoint::TriggerPoint(unsigned int boxID, BoxExtremity extremity,
-                           const string &message, unsigned int ID, MaquetteScene *parent)
+                           const string &message, const string &disposeMessage, unsigned int ID, MaquetteScene *parent)
   : QGraphicsItem()
 {
   _scene = parent;
 
-  _abstract = new AbstractTriggerPoint(boxID, extremity, message, ID);
+  _abstract = new AbstractTriggerPoint(boxID, extremity, message, disposeMessage, ID);
 
   init();
 }
@@ -186,6 +186,20 @@ TriggerPoint::nameInputDialog()
   return nameDialog;
 }
 
+QInputDialog *
+TriggerPoint::disposeMessageDialog() // CB Copie de la fonction nameInputDialog juste au-dessus
+{
+  QInputDialog *nameDialog = new QInputDialog(_scene->views().first(), Qt::Popup);
+  nameDialog->setInputMode(QInputDialog::TextInput);
+  nameDialog->setLabelText(QObject::tr("Enter the dispose message :"));
+  nameDialog->setTextValue(QString::fromStdString(this->_abstract->disposeMessage()));
+  QPoint position = _scene->views().first()->parentWidget()->pos();
+  int MMwidth = _scene->views().first()->parentWidget()->width();
+  nameDialog->move(position.x() + MMwidth / 2, position.y());
+
+  return nameDialog;
+}
+
 void
 TriggerPoint::mouseDoubleClickEvent(QGraphicsSceneMouseEvent * event)
 {
@@ -222,6 +236,23 @@ TriggerPoint::mouseDoubleClickEvent(QGraphicsSceneMouseEvent * event)
             }
           else {
               _scene->displayMessage(QObject::tr("Trigger point's message unchanged").toStdString(), ERROR_LEVEL);
+            }
+        }
+
+      delete trgPntMsgEdit;
+
+      // CB Same operation for dispose message
+
+      trgPntMsgEdit = disposeMessageDialog();
+
+      ok = trgPntMsgEdit->exec();
+      if (ok) {
+          if (_scene->setDisposePointMessage(_abstract->ID(), trgPntMsgEdit->textValue().toStdString())) {
+              _abstract->setDisposeMessage(trgPntMsgEdit->textValue().toStdString());
+              _scene->displayMessage(QObject::tr("Trigger point's dispose message successfully updated").toStdString(), INDICATION_LEVEL);
+            }
+          else {
+              _scene->displayMessage(QObject::tr("Trigger point's dispose message unchanged").toStdString(), ERROR_LEVEL);
             }
         }
 

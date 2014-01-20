@@ -831,7 +831,7 @@ Maquette::addTriggerPoint(const AbstractTriggerPoint &abstract)
       return addTriggerPoint(abstract.boxID(), abstract.boxExtremity(), abstract.message());
     }
   else {
-      TriggerPoint* newTP = new TriggerPoint(abstract.boxID(), abstract.boxExtremity(), abstract.message(), abstract.ID(), _scene);
+      TriggerPoint* newTP = new TriggerPoint(abstract.boxID(), abstract.boxExtremity(), abstract.message(), abstract.disposeMessage(), abstract.ID(), _scene);
       newTP->setID(abstract.ID());
       _scene->addItem(newTP);
 
@@ -869,7 +869,7 @@ Maquette::addTriggerPoint(unsigned int boxID, BoxExtremity extremity, const stri
     else {
         _scene->displayMessage(tr("Trigger point succesfully added").toStdString(), INDICATION_LEVEL);
         _engines->setTriggerPointMessage(triggerID, message);
-        TriggerPoint * newTP = new TriggerPoint(boxID, extremity, message, triggerID, _scene);
+        TriggerPoint * newTP = new TriggerPoint(boxID, extremity, message, "", triggerID, _scene);
         _scene->addItem(newTP);
         _triggerPoints[triggerID] = newTP;
         _boxes[boxID]->addTriggerPoint(extremity, _triggerPoints[triggerID]);
@@ -911,6 +911,20 @@ Maquette::setTriggerPointMessage(unsigned int trgID, const string &message)
   if ((it = _triggerPoints.find(trgID)) != _triggerPoints.end()) {
 
       _engines->setTriggerPointMessage(trgID, message);
+
+      ret = true;
+    }
+  return ret;
+}
+
+bool
+Maquette::setDisposePointMessage(unsigned int trgID, const string &message)
+{
+  bool ret = false;
+  TrgPntMap::iterator it;
+  if ((it = _triggerPoints.find(trgID)) != _triggerPoints.end()) {
+
+      _engines->setDisposePointMessage(trgID, message);
 
       ret = true;
     }
@@ -1668,6 +1682,16 @@ Maquette::load(const string &fileName)
                     else {
 #ifdef DEBUG
                         std::cerr << "Maquette::load : empty message found for Trigger Point " << *it << std::endl;
+#endif
+                    }
+
+                    tpMsg = _engines->getDisposePointMessage(*it);
+                    if (tpMsg != "") {
+                        abstractTrgPnt.setDisposeMessage(tpMsg);
+                    }
+                    else {
+#ifdef DEBUG
+                        std::cerr << "Maquette::load : empty dispose message found for Trigger Point " << *it << std::endl;
 #endif
                     }
                     

@@ -66,7 +66,7 @@ class AbstractTriggerPoint : public Abstract
     friend class TriggerPoint; /// \todo vérifier l'implication de friend class. (par jaime Chao)
 
     AbstractTriggerPoint(unsigned int boxID = NO_ID, BoxExtremity extremity = NO_EXTREMITY,
-                         const std::string &message = "", unsigned int trgID = NO_ID);
+                         const std::string &message = "", const std::string &disposeMessage = "", unsigned int trgID = NO_ID);
 
     AbstractTriggerPoint(const AbstractTriggerPoint &other);
 
@@ -96,6 +96,14 @@ class AbstractTriggerPoint : public Abstract
      */
     inline std::string
     message() const { return _message; }
+
+    /*!
+     * \brief Gets the dispose message of the Trigger Point.
+     *
+     * \return the dispose message of the Trigger Point.
+     */
+    inline std::string
+    disposeMessage() const { return _disposeMessage; }
 
     /*!
      * \brief Gets the waiting state of the Trigger Point.
@@ -146,6 +154,14 @@ class AbstractTriggerPoint : public Abstract
     setMessage(const std::string &message) { _message = message; }
 
     /*!
+     * \brief Sets the dispose message of the Trigger Point.
+     *
+     * \param boxID : the dispose message of the Trigger Point.
+     */
+    inline void
+    setDisposeMessage(const std::string &message) { _disposeMessage = message; }
+
+    /*!
      * \brief Sets the waiting state of the Trigger Point.
      *
      * \param boxID : the waiting state of the Trigger Point.
@@ -188,6 +204,7 @@ class AbstractTriggerPoint : public Abstract
     unsigned int _boxID;        //!< The ID of the box containing trigger point.
     BoxExtremity _boxExtremity; //< The extremity of the box concerned by the trigger point.
     std::string _message;       //< The message waited to be triggered.
+    std::string _disposeMessage;//< The dispose message waited to be triggered.
     QPointF _pos;               //!< The position of the triggerPoint.
     bool _waiting;              //!< The waiting state of the trigger point.
     unsigned int _ID;           //!< The ID of the trigger point.

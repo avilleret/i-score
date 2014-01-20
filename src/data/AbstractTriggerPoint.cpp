@@ -41,14 +41,14 @@
 using std::string;
 
 AbstractTriggerPoint::AbstractTriggerPoint(unsigned int boxID, BoxExtremity extremity,
-                                           const string &message, unsigned int ID)
-  : Abstract(), _boxID(boxID), _boxExtremity(extremity), _message(message),
+                                           const string &message, const string &disposeMessage, unsigned int ID)
+  : Abstract(), _boxID(boxID), _boxExtremity(extremity), _message(message), _disposeMessage(disposeMessage),
     _pos(QPointF(0., 0.)), _waiting(false), _ID(ID)
 {}
 
 AbstractTriggerPoint::AbstractTriggerPoint(const AbstractTriggerPoint &other) :
   Abstract(), _boxID(other._boxID), _boxExtremity(other._boxExtremity),
-  _message(other._message), _pos(other._pos), _waiting(false), _ID(other._ID)
+  _message(other._message), _disposeMessage(other._disposeMessage), _pos(other._pos), _waiting(false), _ID(other._ID)
 {}
 
 int

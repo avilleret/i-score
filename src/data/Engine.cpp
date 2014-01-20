@@ -1717,6 +1717,25 @@ void Engine::setTriggerPointMessage(ConditionedProcessId triggerId, std::string 
     getTimeCondition(triggerId)->sendMessage(TTSymbol("EventTriggerExpression"), v, out);
 }
 
+void Engine::setDisposePointMessage(ConditionedProcessId triggerId, std::string disposeMessage)
+{
+    TimeEventIndex      controlPointIndex;
+    TTTimeProcessPtr    timeProcess = getConditionedProcess(triggerId, controlPointIndex);
+    TTTimeEventPtr      timeEvent;
+    TTValue             v, out;
+
+    // Get start or end time event
+    if (controlPointIndex == BEGIN_CONTROL_POINT_INDEX)
+        TTScoreTimeProcessGetStartEvent(timeProcess, &timeEvent);
+    else
+        TTScoreTimeProcessGetEndEvent(timeProcess, &timeEvent);
+
+    // edit the expression associated to this event
+    v = TTObjectBasePtr(timeEvent);
+    v.append(TTSymbol(disposeMessage));
+    getTimeCondition(triggerId)->sendMessage(TTSymbol("EventDisposeExpression"), v, out);
+}
+
 std::string Engine::getTriggerPointMessage(ConditionedProcessId triggerId)
 {
     TimeEventIndex          controlPointIndex;
@@ -1739,6 +1758,33 @@ std::string Engine::getTriggerPointMessage(ConditionedProcessId triggerId)
     }
     else {
         
+        string empty;
+        return empty;
+    }
+}
+
+std::string Engine::getDisposePointMessage(ConditionedProcessId triggerId)
+{
+    TimeEventIndex          controlPointIndex;
+    TTTimeProcessPtr        timeProcess = getConditionedProcess(triggerId, controlPointIndex);
+    TTTimeEventPtr          timeEvent;
+    TTSymbol                expression;
+    TTValue                 out;
+
+    // Get start or end time event
+    if (controlPointIndex == BEGIN_CONTROL_POINT_INDEX)
+        TTScoreTimeProcessGetStartEvent(timeProcess, &timeEvent);
+    else
+        TTScoreTimeProcessGetEndEvent(timeProcess, &timeEvent);
+
+    // Get the expression associated to this event
+    if (!getTimeCondition(triggerId)->sendMessage(TTSymbol("DisposeExpressionFind"), TTObjectBasePtr(timeEvent), out)) {
+
+        expression = out[0];
+        return expression.c_str();
+    }
+    else {
+
         string empty;
         return empty;
     }
