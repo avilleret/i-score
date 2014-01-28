@@ -1723,7 +1723,7 @@ void Engine::setDisposePointMessage(ConditionedProcessId triggerId, std::string 
 
     // Edit the dispose expression associated to this event
     v.append(TTSymbol(disposeMessage));
-    getTimeCondition(triggerId)->setAttributeValue(TTSymbol("DisposeExpression"), v);
+    getTimeCondition(triggerId)->setAttributeValue(TTSymbol("disposeExpression"), v);
 }
 
 std::string Engine::getTriggerPointMessage(ConditionedProcessId triggerId)
@@ -1759,7 +1759,7 @@ std::string Engine::getDisposePointMessage(ConditionedProcessId triggerId)
     TTValue                 out;
 
     // Get the dispose expression associated to this event
-    if (!getTimeCondition(triggerId)->getAttributeValue(TTSymbol("DisposeExpression"), out)) {
+    if (!getTimeCondition(triggerId)->getAttributeValue(TTSymbol("disposeExpression"), out)) {
         expression = out[0];
         return expression.c_str();
     }
