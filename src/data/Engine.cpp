@@ -1719,21 +1719,11 @@ void Engine::setTriggerPointMessage(ConditionedProcessId triggerId, std::string 
 
 void Engine::setDisposePointMessage(ConditionedProcessId triggerId, std::string disposeMessage)
 {
-    TimeEventIndex      controlPointIndex;
-    TTTimeProcessPtr    timeProcess = getConditionedProcess(triggerId, controlPointIndex);
-    TTTimeEventPtr      timeEvent;
     TTValue             v, out;
 
-    // Get start or end time event
-    if (controlPointIndex == BEGIN_CONTROL_POINT_INDEX)
-        TTScoreTimeProcessGetStartEvent(timeProcess, &timeEvent);
-    else
-        TTScoreTimeProcessGetEndEvent(timeProcess, &timeEvent);
-
-    // edit the expression associated to this event
-    v = TTObjectBasePtr(timeEvent);
+    // Edit the dispose expression associated to this event
     v.append(TTSymbol(disposeMessage));
-    getTimeCondition(triggerId)->sendMessage(TTSymbol("EventDisposeExpression"), v, out);
+    getTimeCondition(triggerId)->setAttributeValue(TTSymbol("DisposeExpression"), v);
 }
 
 std::string Engine::getTriggerPointMessage(ConditionedProcessId triggerId)
@@ -1765,21 +1755,11 @@ std::string Engine::getTriggerPointMessage(ConditionedProcessId triggerId)
 
 std::string Engine::getDisposePointMessage(ConditionedProcessId triggerId)
 {
-    TimeEventIndex          controlPointIndex;
-    TTTimeProcessPtr        timeProcess = getConditionedProcess(triggerId, controlPointIndex);
-    TTTimeEventPtr          timeEvent;
     TTSymbol                expression;
     TTValue                 out;
 
-    // Get start or end time event
-    if (controlPointIndex == BEGIN_CONTROL_POINT_INDEX)
-        TTScoreTimeProcessGetStartEvent(timeProcess, &timeEvent);
-    else
-        TTScoreTimeProcessGetEndEvent(timeProcess, &timeEvent);
-
-    // Get the expression associated to this event
-    if (!getTimeCondition(triggerId)->sendMessage(TTSymbol("DisposeExpressionFind"), TTObjectBasePtr(timeEvent), out)) {
-
+    // Get the dispose expression associated to this event
+    if (!getTimeCondition(triggerId)->getAttributeValue(TTSymbol("DisposeExpression"), out)) {
         expression = out[0];
         return expression.c_str();
     }
