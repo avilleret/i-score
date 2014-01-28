@@ -478,9 +478,14 @@ BoxWidget::jumpToStartCue()
       _startMenu->close();
     }
   _box->select();
-  unsigned int timeOffset = _box->date();
+  unsigned int timeOffset = _box->date()+1;
+  /// \todo Enlever ce +1. Modifier score pour qu'il envoie la cue à timeOffset et non timeOffset-1. NH
+
   _box->maquetteScene()->changeTimeOffset(timeOffset);
   //Maquette::getInstance()->initSceneState();   //reload scene (reset the remote application state)
+
+  //unactive button focus
+  _box->setFocus();
 }
 
 void
@@ -490,9 +495,12 @@ BoxWidget::jumpToEndCue()
       _endMenu->close();
     }
   _box->select();
-  unsigned int timeOffset = _box->date() + _box->duration();
+  unsigned int timeOffset = _box->date()+1 + _box->duration();
   _box->maquetteScene()->changeTimeOffset(timeOffset);
   //Maquette::getInstance()->initSceneState();   //reload scene (reset the remote application state)
+
+  //unactive button focus
+  _box->setFocus();
 }
 
 void

@@ -1870,14 +1870,17 @@ QPointF Engine::getViewPosition()
 }
 
 //Execution ///////////////////////////////////////////////////////////
-void Engine::setTimeOffset(TimeValue timeOffset)
+void Engine::setTimeOffset(TimeValue timeOffset, bool mute)
 {
-    TTValue none;
+    TTValue v, none;
     
-    // set the time process at time offset
-    m_mainScenario->sendMessage(kTTSym_Goto, timeOffset, none);
+    v = timeOffset;
+    v.append(mute);
     
-    TTLogMessage("Engine::setTimeOffset = %ld\n", timeOffset);
+    // set the time process at time offset (an optionaly mute the output)
+    m_mainScenario->sendMessage(kTTSym_Goto, v, none);
+    
+    TTLogMessage("Engine::setTimeOffset = %ld\n", timeOffset);       
 }
 
 TimeValue Engine::getTimeOffset()
@@ -2344,6 +2347,50 @@ void Engine::refreshNetworkNamespace(const string &application, const string &ad
 {
     getApplication(TTSymbol(application))->sendMessage(TTSymbol("DirectoryClear"));
     getApplication(TTSymbol(application))->sendMessage(TTSymbol("DirectoryBuild"));
+}
+
+bool Engine::getDeviceIntegerParameter(const string device, const string protocol, const string parameter, unsigned int &integer){
+    TTSymbol        applicationName;
+    TTErr           err;
+    TTValue         p, v;
+    TTHashPtr       hashParameters;
+
+    applicationName = TTSymbol(device);
+
+    // get parameter's table
+    v = TTSymbol(applicationName);
+    err = getProtocol(TTSymbol(protocol))->getAttributeValue(TTSymbol("applicationParameters"), v);
+
+    if (!err) {
+        hashParameters = TTHashPtr((TTPtr)v[0]);
+        hashParameters->lookup(TTSymbol(parameter),p);
+        integer = TTUInt32(p[0]);
+        return 0;
+    }
+    return 1;
+}
+
+bool Engine::getDeviceStringParameter(const string device, const string protocol, const string parameter, string &string){
+
+    TTSymbol        applicationName, s;
+    TTErr           err;
+    TTValue         p, v;
+    TTHashPtr       hashParameters;
+
+    applicationName = TTSymbol(device);
+
+    // get parameter's table
+    v = TTSymbol(applicationName);
+    err = getProtocol(TTSymbol(protocol))->getAttributeValue(TTSymbol("applicationParameters"), v);
+
+    if (!err) {
+        hashParameters = TTHashPtr((TTPtr)v[0]);
+        hashParameters->lookup(TTSymbol(parameter),p);
+        s = p[0];
+        string = s.c_str();
+        return 0;
+    }
+    return 1;
 }
 
 int Engine::requestNetworkNamespace(const std::string & address, std::string & nodeType, vector<string>& nodes, vector<string>& leaves, vector<string>& attributs, vector<string>& attributsValue)

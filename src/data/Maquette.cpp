@@ -72,7 +72,6 @@ typedef map<unsigned int, BasicBox*> BoxesMap;
 typedef map<unsigned int, Relation*> RelationsMap;
 typedef map<unsigned int, TriggerPoint*> TrgPntMap;
 
-#define SCENARIO_DURATION 1800000
 #define NO_PAINT false
 
 void
@@ -1216,10 +1215,11 @@ Maquette::getProgression(unsigned int boxID)
 }
 
 void
-Maquette::setTimeOffset(unsigned int timeOffset)
-{
-    _engines->setTimeOffset(timeOffset);
+Maquette::setTimeOffset(unsigned int timeOffset, bool mute)
+{    
+    _engines->setTimeOffset(timeOffset,mute);
     _scene->view()->updateTimeOffsetView();
+    _scene->displayMessage(QString("Time offset moved to %1").arg(timeOffset).toStdString(), INDICATION_LEVEL);
 }
 
 unsigned int

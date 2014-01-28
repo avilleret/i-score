@@ -85,7 +85,7 @@ MaquetteScene::MaquetteScene(const QRectF & rect, AttributesEditor *editor)
   _editor = editor;
   _clicked = false;
   _modified = false;
-  _maxSceneWidth = 100000;
+  _maxSceneWidth = 360000;
 
   _relation = new AbstractRelation; /// \todo pourquoi instancier une AbstractRelation ici ? (par jaime Chao)
   _playThread = new PlayingThread(this);
@@ -156,8 +156,9 @@ MaquetteScene::updateProgressBar()
 void
 MaquetteScene::zoomChanged(float value)
 {
+    std::cout<<value<<std::endl;
   setMaxSceneWidth(MaquetteScene::MAX_SCENE_WIDTH*value);
-
+  std::cout<<" > "<<MaquetteScene::MAX_SCENE_WIDTH*value<<std::endl;
   updateProgressBar();
   _timeBar->updateZoom(value);
     
@@ -466,8 +467,7 @@ MaquetteScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
   QGraphicsScene::mousePressEvent(mouseEvent);
   _clicked = true;
  
-  if (paused())
-    stopAndGoToCurrentTime();
+
 
   if (_tempBox) {
       removeItem(_tempBox);
@@ -539,6 +539,13 @@ MaquetteScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
       case BOX_EDIT_MODE:
         break;
     }
+
+  if (paused())
+      stopOrPause();
+//      stopAndGoToCurrentTime();
+
+
+  /// \todo Remettre le stopAndGoToCurrentTime, mais cela ne doit pas renvoyer tout la cue. Modifier setTimeOffset pour ne pas envoyer de dump. NH
 }
 
 void
