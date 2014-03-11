@@ -200,7 +200,7 @@ class Maquette : public QObject
      * \return the current network device used
      */
     std::string getNetworkDevice();
-    void addNetworkDevice(string deviceName, string plugin, string ip, string port);
+    void addNetworkDevice(string deviceName, string plugin, string ip, unsigned int destinationPort, unsigned int receptionPort = 0);
 
     /*!
      * \brief Gets a set of the available network devices.
@@ -238,7 +238,7 @@ class Maquette : public QObject
      * \param IP : the new IP to use
      * \param port : the new port to use
      */
-    void changeNetworkDevice(const std::string &deviceName, const std::string &pluginName, const std::string &IP, const std::string &port);
+    void changeNetworkDevice(const std::string &deviceName, const std::string &pluginName, const std::string &IP, const unsigned int &port);
 
     /*!
      * \brief Gets the set of devices and their respective requestability.
@@ -367,7 +367,7 @@ class Maquette : public QObject
      *
      * \return if messages could be set
      */
-    bool setStartMessagesToSend(unsigned int boxID, NetworkMessages *messages);
+    bool setStartMessagesToSend(unsigned int boxID, NetworkMessages *messages, bool sort = true);
     NetworkMessages *startMessages(unsigned int boxID);
 
     /*!
@@ -378,8 +378,23 @@ class Maquette : public QObject
      *
      * \return if itemsSelected could be set
      */
-
     bool setSelectedItemsToSend(unsigned int boxID, QMap<QTreeWidgetItem*, Data> itemsSelected);
+
+    /*!
+     * \brief Calls the NetworkTree method getAbsoluteAddress.
+     */
+    QString getAbsoluteAddress(QTreeWidgetItem *item);
+
+    /*!
+     * \brief Sorts messages by priority than alphabetical.
+     *
+     * \param messages : message to sort
+     *
+     * \return if itemsSelected could be set
+     */
+    std::vector<std::string> sortByPriority(NetworkMessages *messages);
+    static int compareByPriority(const QPair<QTreeWidgetItem *, std::string> v1, const QPair<QTreeWidgetItem *, std::string> v2);
+
 
     /*!
      * \brief Sets the set of treeItems expanded.
@@ -440,7 +455,7 @@ class Maquette : public QObject
      *
      * \return if messages could be set
      */
-    bool setEndMessagesToSend(unsigned int boxID, NetworkMessages *messages);
+    bool setEndMessagesToSend(unsigned int boxID, NetworkMessages *messages, bool sort = true);
 
     /*!
      * \brief Sends a specific message with current device.
@@ -724,6 +739,26 @@ class Maquette : public QObject
     scene(){ return _scene; }
     static const unsigned int SIZE;
 
+    bool getDeviceLocalHost(std::string deviceName, std::string protocol, std::string &localHost);
+    bool getDeviceLocalHost(std::string deviceName, std::string &localHost);
+
+    bool getDevicePort(std::string deviceName,  std::string protocol, unsigned int &port);
+    bool getDevicePort(std::string deviceName, unsigned int &port);
+    bool getDevicePorts(std::string deviceName, std::string protocol, std::vector<int> &portVector);
+
+    int getOSCInputPort();
+    int getMinuitInputPort();
+
+    bool getDeviceProtocol(std::string deviceName, std::string &protocol);
+    std::vector<std::string> getProtocolsName();
+
+    bool setDeviceName(std::string device, std::string newName);
+    bool setDevicePort(std::string device, int destinationPort, int receptionPort = 0);
+    bool setDeviceLocalHost(std::string device, std::string localHost);
+    bool setDeviceProtocol(std::string device, std::string protocol);
+
+    bool loadNetworkNamespace(const string &application, const string &filepath);
+
   public slots:
     
     /*!
@@ -827,6 +862,16 @@ class Maquette : public QObject
      * \return True(1) or false(0) if the request failed or not.
      */
     int getObjectType(const std::string & address, std::string & nodeType);
+
+    /*!
+     * Gets the priority of an object.
+     *
+     * \param address : the object's address. ex : /deviceName/address1/address2/
+     * \param priority : will be filled with the priority.
+     *
+     * \return True(1) or false(0) if the request failed or not.
+     */
+    int getPriority(const std::string & address, unsigned int & priority);
 
     /*!
      * Gets the children nodes of an object.

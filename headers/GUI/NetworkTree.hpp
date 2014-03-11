@@ -58,10 +58,10 @@ using std::string;
 using std::map;
 
 
-enum { NodeNamespaceType = QTreeWidgetItem::UserType + 1, NodeNoNamespaceType = QTreeWidgetItem::UserType + 2,
+enum { DeviceNode = QTreeWidgetItem::UserType + 1, NodeNoNamespaceType = QTreeWidgetItem::UserType + 2,
        LeaveType = QTreeWidgetItem::UserType + 3, AttributeType = QTreeWidgetItem::UserType + 4,
        OSCNamespace = QTreeWidgetItem::UserType + 5, OSCNode = QTreeWidgetItem::UserType + 6, addOSCNode = QTreeWidgetItem::UserType + 7,
-       MessageType = QTreeWidgetItem::UserType + 7};
+       MessageType = QTreeWidgetItem::UserType + 8, addDeviceNode = QTreeWidgetItem::UserType + 9};
 
 
 
@@ -392,7 +392,9 @@ class NetworkTree : public QTreeWidget
     static int TYPE_COLUMN;
     static int MIN_COLUMN;
     static int MAX_COLUMN;
+    static unsigned int PRIORITY_COLUMN;
     static QString OSC_ADD_NODE_TEXT;
+    static QString ADD_A_DEVICE_TEXT;
     static unsigned int TEXT_POINT_SIZE;
 
     bool VALUE_MODIFIED;
@@ -425,6 +427,13 @@ class NetworkTree : public QTreeWidget
   private:
     void treeRecursiveExploration(QTreeWidgetItem *curItem, bool conflict);
     void createOCSBranch(QTreeWidgetItem *curItem);
+    QTreeWidgetItem *addADeviceNode();
+
+    /*!
+      * \brief Adds a top level item, with a deviceNode type.
+      * \param name : the new device's name.
+      */
+    QTreeWidgetItem *addDeviceItem(QString name);
 
 
     /***********************************************************************
@@ -507,7 +516,7 @@ class NetworkTree : public QTreeWidget
     NetworkMessages *_OSCEndMessages;
     QList<QTreeWidgetItem *> _recMessages;
     QMap<QTreeWidgetItem *, QString> _OSCMessages;
-
+    QTreeWidgetItem *_addADeviceItem;
 
     int _OSCMessageCount;
     bool _treeFilterActive;
@@ -517,18 +526,22 @@ class NetworkTree : public QTreeWidget
 
   public slots:
     /*!
-      * \brief Rebuild the networkTree under the current item, after asking the engine to refresh its namespace.
+      * \brief Rebuild the networkTree under the item (or currentItem by default), after asking the engine to refresh its namespace.
       * \param The application we want to refresh.
       */
+    void refreshItemNamespace(QTreeWidgetItem *item);
     void refreshCurrentItemNamespace();
+    void deleteCurrentItemNamespace();
     void itemCollapsed();
     void clickInNetworkTree(QTreeWidgetItem *item, int column);
     void valueChanged(QTreeWidgetItem* item, int column);
     void changeStartValue(QTreeWidgetItem* item, QString newValue);
     void changeEndValue(QTreeWidgetItem* item, QString newValue);
     void changeNameValue(QTreeWidgetItem* item, QString newValue);
-    void updateDeviceName(QString newName, QString plugin);
-    void updateDevicePlugin(QString newName);
+    void updateDeviceName(QString oldName, QString newName);
+    void addNewDevice(QString deviceName);
+    void updateDeviceProtocol(QString newName);
+    void updateDeviceNamespace(QString deviceName);
     void setRecMode(std::string address);
     void setRecMode(QList<std::string> items);
 

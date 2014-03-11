@@ -44,6 +44,7 @@
 #include "Maquette.hpp"
 
 #include <QFile>
+#include <QDir>
 #include "MainWindow.hpp"
 #include "MaquetteView.hpp"
 #include <QDomDocument>
@@ -77,9 +78,15 @@ typedef map<unsigned int, TriggerPoint*> TrgPntMap;
 void
 Maquette::init()
 {
+    // check if the jamoma framework can be loaded from the i-score application folder (else it will automatically loaded from /usr/local/lib)
+    string jamomaFolder = (QCoreApplication::applicationDirPath() + "/../Frameworks/jamoma").toStdString();
+    
+    if (!QDir(QString::fromStdString(jamomaFolder)).exists())
+        jamomaFolder = "";
+
     // create a ScoreEngine instance
     // note : this is a temporary solution to test new Score framework easily
-    _engines = new Engine(&triggerPointIsActiveCallback, &boxIsRunningCallback, &transportCallback);        
+    _engines = new Engine(&triggerPointIsActiveCallback, &boxIsRunningCallback, &transportCallback, jamomaFolder);
 
     //Creating rootBox as the mainScenario
     AbstractBox *scenarioAb = new AbstractBox();
@@ -331,22 +338,13 @@ Maquette::refreshNetworkNamespace(const std::string &application){
 }
 
 void
-Maquette::changeNetworkDevice(const string &deviceName, const string &pluginName, const string &IP, const string &port)
+Maquette::changeNetworkDevice(const string &deviceName, const string &pluginName, const string &IP, const unsigned int &port)
 {
   if (_devices.find(deviceName) != _devices.end()) {
       removeNetworkDevice(deviceName);
     }
 
   addNetworkDevice(deviceName, pluginName, IP, port);
-
-  std::istringstream iss(port);
-  unsigned int portInt;
-  iss >> portInt;
-
-//    MyDevice newDevice(deviceName,pluginName,portInt,IP);
-//    _devices[deviceName] = newDevice;
-
-//    _engines->addNetworkDevice(deviceName,pluginName,IP,port);
   _currentDevice = deviceName;
 }
 
@@ -508,9 +506,16 @@ Maquette::updateCurves(unsigned int boxID, const vector<string> &startMsgs, cons
 }
 
 bool
-Maquette::setStartMessagesToSend(unsigned int boxID, NetworkMessages *messages)
+Maquette::setStartMessagesToSend(unsigned int boxID, NetworkMessages *messages, bool sort)
 {
-  vector<string> firstMsgs = messages->computeMessages();
+    vector<string> firstMsgs;
+    if(sort){
+        firstMsgs = sortByPriority(messages);
+    }
+    else
+        firstMsgs = messages->computeMessages();
+
+  //sortByPriority(firstMsgs);
 
   if (boxID != NO_ID && (getBox(boxID) != NULL)) {
       _engines->setCtrlPointMessagesToSend(boxID, BEGIN_CONTROL_POINT_INDEX, firstMsgs);
@@ -535,6 +540,68 @@ Maquette::startMessages(unsigned int boxID)
       std::cerr << "Maquette::startMessage : wrong boxID" << std::endl;
       return NULL;
     }
+}
+
+QString
+Maquette::getAbsoluteAddress(QTreeWidgetItem *item){
+    /// \todo Ne pas dupliquer cette fonction déjà présente dans NetworkTree. Modifier cette dernière pour pouvoir l'appeler ainsi : NetworkTree::getAbsoluteAddress. NH
+    return _scene->editor()->networkTree()->getAbsoluteAddress(item);
+}
+
+int
+Maquette::compareByPriority(const QPair<QTreeWidgetItem *, std::string> v1, const QPair<QTreeWidgetItem *, std::string> v2)
+{
+    QString                     name1 = QString::fromStdString(v1.second),
+                                name2 = QString::fromStdString(v2.second);
+    QTreeWidgetItem             *item1 = v1.first,
+                                *item2 = v2.first;
+    unsigned int                priority1,
+                                priority2;
+
+    //Gets priority
+    std::istringstream issPriority1(item1->text(NetworkTree::PRIORITY_COLUMN).toStdString());
+    issPriority1 >> priority1;
+
+    std::istringstream issPriority2(item2->text(NetworkTree::PRIORITY_COLUMN).toStdString());
+    issPriority2 >> priority2;
+
+    //Begin compare cases
+    if (priority1 == priority2){
+        /// \todo : Gérer le cas où name1==name2. Comparer alors les instances. NH
+        return name1 < name2;
+    }
+
+    if (priority1 == 0)
+        return 0; //true
+
+    if(priority2 == 0)
+        return 1; //false
+
+    return priority1 < priority2;
+}
+
+vector<string>
+Maquette::sortByPriority(NetworkMessages *messages){
+    vector<string>                              sortedMessages;
+    QPair<QTreeWidgetItem *, std::string>       pair; //<item, absoluteAddress>
+    QList<QTreeWidgetItem *>                    itemsList = messages->getItems();
+    QList< QPair<QTreeWidgetItem *,string> >    pairsList;
+
+    //Make pairs list <item, address>
+    for(int i=0 ; i<itemsList.size() ; i++)
+    {
+        pair = qMakePair( itemsList.at(i), messages->computeMessage(messages->getMessage(itemsList.at(i))));
+        pairsList << pair;
+    }
+
+    //Sort list
+    qSort(pairsList.begin(), pairsList.end(), compareByPriority);
+
+    //convert to vector<string>
+    for(int i=0 ; i<pairsList.size() ; i++)
+        sortedMessages.push_back(pairsList.at(i).second);
+
+    return sortedMessages;
 }
 
 bool
@@ -614,9 +681,14 @@ Maquette::endMessages(unsigned int boxID)
 }
 
 bool
-Maquette::setEndMessagesToSend(unsigned int boxID, NetworkMessages *messages)
-{
-  vector<string> lastMsgs = messages->computeMessages();
+Maquette::setEndMessagesToSend(unsigned int boxID, NetworkMessages *messages, bool sort)
+{  
+  vector<string> lastMsgs;
+  if(sort){
+      lastMsgs = sortByPriority(messages);
+  }
+  else
+      lastMsgs = messages->computeMessages();
 
   if (boxID != NO_ID && (getBox(boxID) != NULL)) {
       _engines->setCtrlPointMessagesToSend(boxID, END_CONTROL_POINT_INDEX, lastMsgs);
@@ -1785,15 +1857,11 @@ Maquette::load(const string &fileName)
 }
 
 void
-Maquette::addNetworkDevice(string deviceName, string plugin, string ip, string port)
+Maquette::addNetworkDevice(string deviceName, string plugin, string ip, unsigned int destinationPort, unsigned int receptionPort)
 {
-  std::istringstream iss(port);
-  unsigned int portInt;
-  iss >> portInt;
-
-  MyDevice newDevice(deviceName, plugin, portInt, ip);
+  MyDevice newDevice(deviceName, plugin, destinationPort, ip);
   _devices[deviceName] = newDevice;
-  _engines->addNetworkDevice(deviceName, plugin, ip, port);
+  _engines->addNetworkDevice(deviceName, plugin, ip, destinationPort, receptionPort);
 }
 
 double
@@ -1975,6 +2043,11 @@ Maquette::getObjectType(const std::string & address, std::string & nodeType)
 }
 
 int
+Maquette::getPriority(const std::string & address, unsigned int & priority){
+    return _engines->requestObjectPriority(address,priority);
+}
+
+int
 Maquette::getObjectChildren(const std::string & address, std::vector<std::string>& children)
 {
     return _engines->requestObjectChildren(address,children);
@@ -1997,4 +2070,108 @@ Maquette::setCurveRecording(unsigned int boxID, const string address, bool activ
         _recordingBoxes<<getBox(boxID);
     else
         _recordingBoxes.removeAll(getBox(boxID));
+}
+
+bool
+Maquette::getDeviceLocalHost(std::string deviceName, std::string protocol, string &localHost)
+{
+    if(_engines->getDeviceStringParameter(deviceName,protocol,"ip",localHost) == 0)
+        return 0;
+    else{
+        std::cerr << "Maquette::getLocalHost : cannot find for device : "<<deviceName << std::endl;
+        return 1;
+    }
+}
+
+bool
+Maquette::getDeviceLocalHost(std::string deviceName, std::string &localHost)
+{
+    std::string protocol;
+    if(getDeviceProtocol(deviceName, protocol) == 0){
+        return getDeviceLocalHost(deviceName,protocol,localHost);
+
+    }
+}
+
+bool
+Maquette::getDevicePort(std::string deviceName, std::string protocol, unsigned int &port){
+
+    if(_engines->getDeviceIntegerParameter(deviceName,protocol,"port",port) == 0)
+        return 0;
+    else{
+        std::cerr << "Maquette::getPort : cannot find port for the device : "<<deviceName << std::endl;
+        return 1;
+    }
+}
+
+bool
+Maquette::getDevicePorts(std::string deviceName, std::string protocol, vector<int> &portVector){
+
+    if(_engines->getDeviceIntegerVectorParameter(deviceName,protocol,"port",portVector) == 0)
+        return 0;
+    else{
+        std::cerr << "Maquette::getDevicePorts : cannot find ports for the device : "<<deviceName << std::endl;
+        return 1;
+    }
+}
+
+bool
+Maquette::getDevicePort(std::string deviceName, unsigned int &port)
+{
+    string protocol;
+    if (_engines->getDeviceProtocol(deviceName,protocol) == 0)
+        return getDevicePort(deviceName,protocol,port);
+}
+
+int
+Maquette::getOSCInputPort(){
+    return _engines->OSC_INPUT_PORT;
+}
+
+int
+Maquette::getMinuitInputPort(){
+    return _engines->MINUIT_INPUT_PORT;
+}
+
+bool
+Maquette::getDeviceProtocol(std::string deviceName, std::string &protocol){
+
+    if (_engines->getDeviceProtocol(deviceName,protocol) == 0)
+        return 0;
+    else{
+        std::cerr << "Maquette::getProtocol : cannot find protocol name for the device : "<<deviceName << std::endl;
+        return 1;
+    }
+}
+
+std::vector<std::string>
+Maquette::getProtocolsName(){
+    std::vector<std::string> protocols;
+    _engines->getProtocolNames(protocols);
+    return protocols;
+}
+
+bool
+Maquette::setDeviceName(std::string device, std::string newName){
+    return _engines->setDeviceName(device, newName);
+}
+
+bool
+Maquette::setDevicePort(std::string device, int destinationPort, int receptionPort){
+    return _engines->setDevicePort(device, destinationPort, receptionPort);
+}
+
+bool
+Maquette::setDeviceLocalHost(std::string device, std::string localHost){
+    return _engines->setDeviceLocalHost(device, localHost);
+}
+
+bool
+Maquette::setDeviceProtocol(std::string device, std::string protocol){
+    return _engines->setDeviceProtocol(device, protocol);
+}
+
+bool
+Maquette::loadNetworkNamespace(const string &application, const string &filepath){
+    return _engines->loadNetworkNamespace(application,filepath);
 }

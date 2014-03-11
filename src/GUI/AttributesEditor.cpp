@@ -157,7 +157,7 @@ AttributesEditor::createWidgets()
 
   //NetworkTree
   _networkTree = new NetworkTree(this);
-  _networkTree->load(); 
+  //_networkTree->load();
 
   //Start&End value
   _boxStartValue = new QDoubleSpinBox;
@@ -247,7 +247,7 @@ AttributesEditor::setAttributes(AbstractBox *abBox)
 
           _networkTree->displayBoxContent(abBox);
 
-          //PRINT MESSAGES         
+          //PRINT MESSAGES
 //            QList<QTreeWidgetItem *> items = _networkTree->assignedItems().keys();
 //            QList<QTreeWidgetItem *>::iterator i;
 //            QTreeWidgetItem *curIt;
