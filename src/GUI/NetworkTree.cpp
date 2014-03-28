@@ -1,15 +1,16 @@
 /*
- * Copyright: LaBRI / SCRIME
+ * Copyright: LaBRI / SCRIME / L'Arboretum
  *
- * Authors: Luc Vercellin and Bruno Valeze (08/03/2010)
+ * Authors: Pascal Baltazar, Nicolas Hincker, Luc Vercellin and Myriam Desainte-Catherine (as of 16/03/2014)
  *
- * luc.vercellin@labri.fr
+ *iscore.contact@gmail.com
  *
- * This software is a computer program whose purpose is to provide
- * notation/composition combining synthesized as well as recorded
- * sounds, providing answers to the problem of notation and, drawing,
- * from its very design, on benefits from state of the art research
- * in musicology and sound/music computing.
+ * This software is an interactive intermedia sequencer.
+ * It allows the precise and flexible scripting of interactive scenarios.
+ * In contrast to most sequencers, i-score doesn’t produce any media, 
+ * but controls other environments’ parameters, by creating snapshots 
+ * and automations, and organizing them in time in a multi-linear way.
+ * More about i-score on http://www.i-score.org
  *
  * This software is governed by the CeCILL license under French law and
  * abiding by the rules of distribution of free software.  You can  use,
@@ -64,6 +65,9 @@ int NetworkTree::MIN_COLUMN = 8;
 int NetworkTree::MAX_COLUMN = 9;
 unsigned int NetworkTree::PRIORITY_COLUMN = 10;
 
+const QColor NetworkTree::TEXT_COLOR = QColor(0, 0, 0);
+const QColor NetworkTree::TEXT_DISABLED_COLOR = QColor(100, 100, 100);
+
 QString NetworkTree::OSC_ADD_NODE_TEXT = QString("Add a node");
 QString NetworkTree::ADD_A_DEVICE_TEXT = QString("Add a device");
 
@@ -73,10 +77,11 @@ NetworkTree::NetworkTree(QWidget *parent) : QTreeWidget(parent)
 {
   init();
 
-  setColumnCount(9);
+  setColumnCount(10);
   QStringList list;
-  list << "Address" << "Value" << "Start" << " ~ " << "End" << " = " << " % "<<" type "<<"min "<<"max "<<"priority ";
-  setColumnWidth(NAME_COLUMN, 118);
+  list << "Address" << "Value" << "Start" << " ~ " << "End" << " = " << " % "<<" type "<<"min "<<"max ";
+  // removed <<"priority " and column
+  setColumnWidth(NAME_COLUMN, 115);
   setColumnWidth(VALUE_COLUMN, 63);
   setColumnWidth(START_COLUMN, 60);
   setColumnWidth(END_COLUMN, 60);
@@ -148,14 +153,19 @@ NetworkTree::init()
   setStyleSheet(
     "QTreeView {"
     "show-decoration-selected: 1;"
+    "background-color: #5a5a5a;"
     "}"
 
     "QTreeView::item {"
-    "border-right: 1px solid #d9d9d9;"
+    "border-right: 1px solid #000000;"
     "border-top-color: transparent;"
     "border-bottom-color: transparent;"
     "}"
-          
+    
+    "QTreeView::item:disabled {"
+    "background: transparent;"
+    "}"
+                
     "QTreeView::item:hover {"
     "background: qlineargradient(x1: -5, y1: 0, x2: 0, y2: 1, stop: 0 #e7effd, stop: 1 #cbdaf1);"
     "border: 1px solid #bfcde4;"
@@ -172,6 +182,17 @@ NetworkTree::init()
     "QTreeView::item:selected:!active {"
     "background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #6b9be8, stop: 1 #577fbf);"
     "}"
+
+              "  QHeaderView::section {"
+              "background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+              "stop:0 #a1a1a1, stop: 0.5 #909090,"
+              "stop: 0.6 #808080, stop:1 #a3a3a3);"
+              "color: black;"
+              "padding-left: 1px;"
+              "padding-top: 2px;"
+              "padding-bottom: 1px;"
+              "border: 1px solid #606060;"
+              "}"
     );
 }
 
@@ -479,7 +500,7 @@ NetworkTree::createOCSBranch(QTreeWidgetItem *curItem)
 {
   QTreeWidgetItem *addANodeItem = new QTreeWidgetItem(QStringList(OSC_ADD_NODE_TEXT), addOSCNode);
   addANodeItem->setFlags(Qt::ItemIsEnabled);
-  addANodeItem->setIcon(0, QIcon(":/images/addANode.png"));
+  addANodeItem->setIcon(0, QIcon(":/resources/images/addANode.png"));
   curItem->addChild(addANodeItem);
   curItem->setFlags(Qt::ItemIsEnabled);
 }
@@ -489,7 +510,7 @@ NetworkTree::addADeviceNode()
 {
   QTreeWidgetItem *addADeviceNode = new QTreeWidgetItem(QStringList(ADD_A_DEVICE_TEXT), addDeviceNode);
   addADeviceNode->setFlags(Qt::ItemIsEnabled);
-  addADeviceNode->setIcon(0, QIcon(":/images/addANode.png"));
+  addADeviceNode->setIcon(0, QIcon(":/resources/images/addANode.png"));
   return addADeviceNode;
 }
 
@@ -601,157 +622,157 @@ NetworkTree::treeRecursiveExploration(QTreeWidgetItem *curItem, bool conflict)
 {
     if (!curItem->isDisabled()) {
 
-        vector<string>            children,
-                                  attributesValues;
-        string                    nodeType,
-                                  address = (getAbsoluteAddress(curItem)).toStdString();
-        bool                      requestSuccess;
-        int                       requestResult;
-        vector<string>::iterator  it;
+         vector<string>            children,
+                                   attributesValues;
+         string                    nodeType,
+                                   address = (getAbsoluteAddress(curItem)).toStdString();
+         bool                      requestSuccess;
+         int                       requestResult;
+         vector<string>::iterator  it;
 
-        //TOTO : check if necessary (unused for the moment) NH.
-        _addressMap.insert(curItem, address);
+         //TOTO : check if necessary (unused for the moment) NH.
+         _addressMap.insert(curItem, address);
 
-        //Gets object's type
-        requestResult = Maquette::getInstance()->getObjectType(address,nodeType);
-        requestSuccess = requestResult > 0;
+         //Gets object's type
+         requestResult = Maquette::getInstance()->getObjectType(address,nodeType);
+         requestSuccess = requestResult > 0;
 
-        //Gets priority
-        unsigned int priority = 0;
-        if(!Maquette::getInstance()->getPriority(address,priority)){
-            curItem->setText(PRIORITY_COLUMN,QString("%1").arg(priority));
-        }
+         //Gets priority
+         unsigned int priority = 0;
+         if(!Maquette::getInstance()->getPriority(address,priority)){
+             curItem->setText(PRIORITY_COLUMN,QString("%1").arg(priority));
+         }
 
-        conflict = false;
+         conflict = false;
 
-        if(treeFilterActive()){
+         if(treeFilterActive()){
 
-            if(nodeType == "Model" || nodeType == "ModelInfo" || nodeType == "Input.audio" || nodeType == "Output.audio" || nodeType == "Viewer"){
-                delete(curItem);
-                return;
-            }
-            if(Maquette::getInstance()->requestObjectAttribruteValue(address,"tag",attributesValues) > 0){
-                if(attributesValues[0] == "setup"){
-                    delete(curItem);
-                    return;
-                }
-            }
-            if(nodeType == "PresetManager"){
-                curItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsUserCheckable);
+             if(nodeType == "Model" || nodeType == "ModelInfo" || nodeType == "Input.audio" || nodeType == "Output.audio" || nodeType == "Viewer"){
+                 delete(curItem);
+                 return;
+             }
+             if(Maquette::getInstance()->requestObjectAttribruteValue(address,"tag",attributesValues) > 0){
+                 if(attributesValues[0] == "setup"){
+                     delete(curItem);
+                     return;
+                 }
+             }
+             if(nodeType == "PresetManager"){
+                 curItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsUserCheckable);
 
-                QFont curFont = curItem->font(NAME_COLUMN);
-                curFont.setItalic(true);
-                curItem->setFont(NAME_COLUMN,curFont);
+                 QFont curFont = curItem->font(NAME_COLUMN);
+                 curFont.setItalic(true);
+                 curItem->setFont(NAME_COLUMN,curFont);
 
-                QBrush brush(Qt::lightGray);
-                curItem->setForeground(NAME_COLUMN, brush);
-                curItem->setForeground(VALUE_COLUMN, brush);
+                 QBrush brush(Qt::lightGray);
+                 curItem->setForeground(NAME_COLUMN, brush);
+                 curItem->setForeground(VALUE_COLUMN, brush);
 
-                curItem->setText(TYPE_COLUMN,QString("->"));
-                curItem->setToolTip(TYPE_COLUMN, tr("Type PresetManager"));
-                curItem->setWhatsThis(NAME_COLUMN,"Message");
+                 curItem->setText(TYPE_COLUMN,QString("->"));
+                 curItem->setToolTip(TYPE_COLUMN, tr("Type PresetManager"));
+                 curItem->setWhatsThis(NAME_COLUMN,"Message");
 
-                return;
-            }
-        }
+                 return;
+             }
+         }
 
-        if(Maquette::getInstance()->requestObjectAttribruteValue(address,"service",attributesValues) > 0){
-            if(nodeType == "Container"){
-                //Case type view
-                if(treeFilterActive() && attributesValues[0] == "view"){
-                    delete(curItem);
-                    return;
-                }
-            }
-            else{
-                curItem->setCheckState(INTERPOLATION_COLUMN, Qt::Unchecked);
-                curItem->setCheckState(REDUNDANCY_COLUMN, Qt::Unchecked);
+         if(Maquette::getInstance()->requestObjectAttribruteValue(address,"service",attributesValues) > 0){
+             if(nodeType == "Container"){
+                 //Case type view
+                 if(treeFilterActive() && attributesValues[0] == "view"){
+                     delete(curItem);
+                     return;
+                 }
+             }
+             else{
+                 curItem->setCheckState(INTERPOLATION_COLUMN, Qt::Unchecked);
+                 curItem->setCheckState(REDUNDANCY_COLUMN, Qt::Unchecked);
 
-                //Case type return
-                if(attributesValues[0] == "return"){
+                 //Case type return
+                 if(attributesValues[0] == "return"){
 
-                    curItem->setFlags(Qt::ItemIsDropEnabled);
-                    QFont curFont = curItem->font(NAME_COLUMN);
-                    curFont.setItalic(true);
-                    curItem->setFont(NAME_COLUMN,curFont);
+                     curItem->setFlags(Qt::ItemIsDropEnabled);
+                     QFont curFont = curItem->font(NAME_COLUMN);
+                     curFont.setItalic(true);
+                     curItem->setFont(NAME_COLUMN,curFont);
 
-                    QBrush brush(Qt::lightGray);
-                    curItem->setForeground(NAME_COLUMN, brush);
-                    curItem->setForeground(VALUE_COLUMN, brush);
+                     QBrush brush(Qt::lightGray);
+                     curItem->setForeground(NAME_COLUMN, brush);
+                     curItem->setForeground(VALUE_COLUMN, brush);
 
-                    curItem->setText(TYPE_COLUMN,QString("<-"));
-                    curItem->setToolTip(TYPE_COLUMN, tr("Type return"));
-                    return;
-                }
+                     curItem->setText(TYPE_COLUMN,QString("<-"));
+                     curItem->setToolTip(TYPE_COLUMN, tr("Type return"));
+                     return;
+                 }
 
-                //Case type message
-                if(attributesValues[0] == "message"){
-                    curItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsUserCheckable);
+                 //Case type message
+                 if(attributesValues[0] == "message"){
+                     curItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsUserCheckable);
 
-                    QFont curFont = curItem->font(NAME_COLUMN);
-                    curFont.setItalic(true);
-                    curItem->setFont(NAME_COLUMN,curFont);
+                     QFont curFont = curItem->font(NAME_COLUMN);
+                     curFont.setItalic(true);
+                     curItem->setFont(NAME_COLUMN,curFont);
 
-                    QBrush brush(Qt::lightGray);
-                    curItem->setForeground(NAME_COLUMN, brush);
-                    curItem->setForeground(VALUE_COLUMN, brush);
+                     QBrush brush(Qt::lightGray);
+                     curItem->setForeground(NAME_COLUMN, brush);
+                     curItem->setForeground(VALUE_COLUMN, brush);
 
-                    curItem->setText(TYPE_COLUMN,QString("->"));
-                    curItem->setToolTip(TYPE_COLUMN, tr("Type message"));
-                    curItem->setWhatsThis(NAME_COLUMN,"Message");
+                     curItem->setText(TYPE_COLUMN,QString("->"));
+                     curItem->setToolTip(TYPE_COLUMN, tr("Type message"));
+                     curItem->setWhatsThis(NAME_COLUMN,"Message");
 
-                    return;
-                }
+                     return;
+                 }
 
-                //Case type parameter
-                if(attributesValues[0] == "parameter"){
-                    curItem->setText(TYPE_COLUMN,QString("<->"));
-                    curItem->setToolTip(TYPE_COLUMN, tr("Type parameter"));
-                }
-                curItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsDragEnabled | Qt::ItemIsUserCheckable);
-            }
-        }
+                 //Case type parameter
+                 if(attributesValues[0] == "parameter"){
+                     curItem->setText(TYPE_COLUMN,QString("<->"));
+                     curItem->setToolTip(TYPE_COLUMN, tr("Type parameter"));
+                 }
+                 curItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsDragEnabled | Qt::ItemIsUserCheckable);
+             }
+         }
 
-        //Get range bounds
-        vector<float> rangeBounds;
-        if(Maquette::getInstance()->getRangeBounds(address,rangeBounds)>0){
-            curItem->setText(MIN_COLUMN,QString("%1").arg(rangeBounds[0]));
-            curItem->setToolTip(MIN_COLUMN, curItem->text(MIN_COLUMN));
-            curItem->setText(MAX_COLUMN,QString("%1").arg(rangeBounds[1]));
-            curItem->setToolTip(MAX_COLUMN, curItem->text(MAX_COLUMN));
-        }
+         //Get range bounds
+         vector<float> rangeBounds;
+         if(Maquette::getInstance()->getRangeBounds(address,rangeBounds)>0){
+             curItem->setText(MIN_COLUMN,QString("%1").arg(rangeBounds[0]));
+             curItem->setToolTip(MIN_COLUMN, curItem->text(MIN_COLUMN));
+             curItem->setText(MAX_COLUMN,QString("%1").arg(rangeBounds[1]));
+             curItem->setToolTip(MAX_COLUMN, curItem->text(MAX_COLUMN));
+         }
 
-        //Get object's chidren
-        if(Maquette::getInstance()->getObjectChildren(address,children) > 0){
+         //Get object's chidren
+         if(Maquette::getInstance()->getObjectChildren(address,children) > 0){
 
-            for(it = children.begin() ; it != children.end() ; ++it){
-                QStringList name;
-                name << QString::fromStdString(*it);
-                QTreeWidgetItem *childItem;
-                string childAbsoluteAddress = address;
-                childAbsoluteAddress.append("/");
-                childAbsoluteAddress.append(*it);
+             for(it = children.begin() ; it != children.end() ; ++it){
+                 QStringList name;
+                 name << QString::fromStdString(*it);
+                 QTreeWidgetItem *childItem;
+                 string childAbsoluteAddress = address;
+                 childAbsoluteAddress.append("/");
+                 childAbsoluteAddress.append(*it);
 
-                if(Maquette::getInstance()->getObjectType(childAbsoluteAddress,nodeType)){
+                 if(Maquette::getInstance()->getObjectType(childAbsoluteAddress,nodeType)){
 
-                    if(nodeType == "Data"){
-                        childItem = new QTreeWidgetItem(name, LeaveType);
-                    }
-                    else{
-                        childItem = new QTreeWidgetItem(name, NodeNoNamespaceType);
-                    }
-                }
-                else{
-                    childItem = new QTreeWidgetItem(name, NodeNoNamespaceType);
-                }
-                name.clear();
-                curItem->addChild(childItem);
-                curItem->setCheckState(START_COLUMN, Qt::Unchecked);
-                curItem->setCheckState(END_COLUMN, Qt::Unchecked);
-                treeRecursiveExploration(childItem, conflict);
-            }
-        }
-    }
+                     if(nodeType == "Data"){
+                         childItem = new QTreeWidgetItem(name, LeaveType);
+                     }
+                     else{
+                         childItem = new QTreeWidgetItem(name, NodeNoNamespaceType);
+                     }
+                 }
+                 else{
+                     childItem = new QTreeWidgetItem(name, NodeNoNamespaceType);
+                 }
+                 name.clear();
+                 curItem->addChild(childItem);
+                 curItem->setCheckState(START_COLUMN, Qt::Unchecked);
+                 curItem->setCheckState(END_COLUMN, Qt::Unchecked);
+                 treeRecursiveExploration(childItem, conflict);
+             }
+         }
+     }
 }
 
 void
@@ -2018,23 +2039,32 @@ NetworkTree::updateCurve(QTreeWidgetItem *item, unsigned int boxID, bool forceUp
               vector<short> sectionType;
 
               bool getCurveSuccess = Maquette::getInstance()->getCurveAttributes(boxID, address, 0, sampleRate, redundancy, interpolate, values, argTypes, xPercents, yValues, sectionType, coeff);
-              if (getCurveSuccess) {
-                  if (forceUpdate) {
-                      if (interpolate) {
-                          interpolate = !(values.front() == values.back());
-                          Maquette::getInstance()->setCurveMuteState(boxID, address, !interpolate);
+              bool getCurveValuesSuccess = Maquette::getInstance()->getCurveValues(boxID, address, 0, yValues);
+
+              if (getCurveSuccess || getCurveValuesSuccess) {
+                  if(getCurveSuccess){
+                      if (forceUpdate) {
                           if (interpolate) {
-//                                std::cout<<"networkTree -> interpolate devient true"<<std::endl;
-                            }
-                          else {
-                              ;
-                            }
-//                                std::cout<<"networkTree -> interpolate devient false"<<std::endl;
-                        }
-                    }
+                              interpolate = !(values.front() == values.back());
+                              Maquette::getInstance()->setCurveMuteState(boxID, address, !interpolate);
+                              if (interpolate) {
+                                  //                                std::cout<<"networkTree -> interpolate devient true"<<std::endl;
+                              }
+                              else {
+                                  ;
+                              }
+                              //                                std::cout<<"networkTree -> interpolate devient false"<<std::endl;
+                          }
+                      }
+                  }
+
+                  else if (getCurveValuesSuccess){
+                      interpolate = true;
+                  }
+
                   updateLine(item, interpolate, sampleRate, redundancy);
-                }
-            }
+              }
+          }
         }
     }
   else { // Box Not Found
@@ -2234,7 +2264,7 @@ NetworkTree::setRecMode(std::string address){
     if(!_recMessages.contains(item)){
         _recMessages<<item;
         item->setData(INTERPOLATION_COLUMN, Qt::CheckStateRole, QVariant());
-        item->setIcon(INTERPOLATION_COLUMN,QIcon(":/images/record.svg"));
+        item->setIcon(INTERPOLATION_COLUMN,QIcon(":/resources/images/record.svg"));
     }
     else{
         _recMessages.removeAll(item);
